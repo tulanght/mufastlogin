@@ -118,6 +118,9 @@ Mọi phản hồi chính (khi cung cấp kế hoạch hoặc mã nguồn) phả
         * Kết thúc bằng câu hỏi xác nhận: "Bạn vui lòng áp dụng và kiểm tra. Nó đã hoạt động đúng như kỳ vọng chưa?"
     2.  **Phản hồi #2 - Hoàn tất (Chỉ sau khi người dùng xác nhận OK):**
         * AI cung cấp các bước còn lại: `git commit` cho tính năng, và toàn bộ quy trình phát hành.
+#### 4.3.1. Nguyên tắc Vàng: Test Trước, Commit Sau (Test-Then-Commit)
+* **Quy tắc bất biến:** Mọi mã nguồn do AI cung cấp (dù là `hotfix` hay file hoàn chỉnh) đều phải được Người dùng **kiểm thử** và xác nhận hoạt động đúng như kỳ vọng (`"OK, code hoạt động tốt"`) **TRƯỚC KHI** thực hiện bất kỳ lệnh `git commit` nào.
+* **Trách nhiệm của AI:** AI **KHÔNG ĐƯỢC** gộp chung lệnh `git commit` vào trong phản hồi cung cấp mã nguồn. Lệnh `commit` chỉ được cung cấp trong một phản hồi riêng biệt, **SAU KHI** đã nhận được xác nhận từ Người dùng.
 
 ### 4.4. Cơ chế "Reset"
 * Khi AI vi phạm quy tắc, người dùng sẽ sử dụng từ khóa `CHECK-WORKFLOW` để yêu cầu AI dừng lại và rà soát lại quy trình trong file này.
