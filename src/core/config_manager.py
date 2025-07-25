@@ -66,3 +66,21 @@ class ConfigManager:
             self.config.add_section(account)
         self.config.set(account, 'password', password)
         self._write_config()
+        
+    # hotfix - 2025-07-25 - Add delete_account method
+    def delete_account(self, account: str) -> bool:
+        """
+        Deletes an account (section) from the config file.
+
+        Args:
+            account (str): The name of the account to delete.
+
+        Returns:
+            bool: True if the account was deleted, False if it didn't exist.
+        """
+        self._read_config()
+        if self.config.has_section(account):
+            self.config.remove_section(account)
+            self._write_config()
+            return True
+        return False
