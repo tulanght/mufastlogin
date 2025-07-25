@@ -1,0 +1,7 @@
+# file-path: requirements.txt
+# version: 1.0
+# last-updated: 2025-07-25
+# description: Lists the required packages for the MU Fast Login application.
+
+pygetwindow==0.0.9
+pynput==1.7.6
