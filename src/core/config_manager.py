@@ -84,3 +84,30 @@ class ConfigManager:
             self._write_config()
             return True
         return False
+    
+      
+    # hotfix - 2025-07-25 - Add coordinate management.
+    def save_coords(self, field_name, coords):
+        """Saves coordinates for a specific field."""
+        self._read_config()
+        if not self.config.has_section('Coordinates'):
+            self.config.add_section('Coordinates')
+        self.config.set('Coordinates', field_name, f"{coords[0]},{coords[1]}")
+        self._write_config()
+
+    def load_coords(self):
+        """Loads all coordinates from the [Coordinates] section."""
+        self._read_config()
+        coords = {}
+        if not self.config.has_section('Coordinates'):
+            return None
+        try:
+            if self.config.has_option('Coordinates', 'account'):
+                acc_coords = self.config.get('Coordinates', 'account').split(',')
+                coords['account'] = (int(acc_coords[0]), int(acc_coords[1]))
+            if self.config.has_option('Coordinates', 'password'):
+                pw_coords = self.config.get('Coordinates', 'password').split(',')
+                coords['password'] = (int(pw_coords[0]), int(pw_coords[1]))
+            return coords
+        except:
+            return None

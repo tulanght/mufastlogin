@@ -1,7 +1,8 @@
 # file-path: requirements.txt
-# version: 1.0
+# version: 4.0 (Final)
 # last-updated: 2025-07-25
-# description: Lists the required packages for the MU Fast Login application.
+# description: Final Hybrid Approach: pywin32 for clicking, pynput for typing.
 
 pygetwindow==0.0.9
-pynput==1.7.6
+pynput
+pywin32

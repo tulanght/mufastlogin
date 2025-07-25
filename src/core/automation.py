@@ -1,61 +1,62 @@
 # file-path: src/core/automation.py
-# version: 1.0
-# last-updated: 2025-07-25
-# description: Handles the automation of logging into the game client.
-#              It finds the game window and simulates keyboard inputs.
+# Nội dung mới hoàn toàn
 
 import pygetwindow as gw
 from pynput.keyboard import Controller, Key
+import win32api
+import win32con
 import time
+from src.core.app_logger import log
 
-def perform_login(account: str, password: str) -> tuple[bool, str]:
-    """
-    Finds the MU game window and performs the login sequence.
+def low_level_click(x, y):
+    """Performs a low-level mouse click using win32api."""
+    win32api.SetCursorPos((x, y))
+    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, x, y, 0, 0)
+    time.sleep(0.05)
+    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, x, y, 0, 0)
 
-    Args:
-        account (str): The account username.
-        password (str): The account password.
-
-    Returns:
-        tuple[bool, str]: A tuple containing a boolean for success status
-                          and a message string.
-    """
+def perform_login(account: str, password: str, relative_coords: dict) -> tuple[bool, str]:
+    OUR_APP_TITLE_KEYWORD = "Fast Login"
     WINDOW_TITLE = "MU"
+    
+    if not relative_coords or 'account' not in relative_coords or 'password' not in relative_coords:
+        return (False, "Chưa hiệu chỉnh tọa độ. Vui lòng vào tab Quản lý.")
+
     keyboard = Controller()
-
     try:
-        # 1. Find the game window
-        mu_windows = gw.getWindowsWithTitle(WINDOW_TITLE)
-        if not mu_windows:
-            return (False, f"Không tìm thấy cửa sổ game với tiêu đề '{WINDOW_TITLE}'.\nHãy chắc chắn rằng game đã được mở.")
+        log.info("--- Bắt đầu quá trình đăng nhập (Hybrid: Win32 Click + Pynput Type) ---")
         
-        game_window = mu_windows[0]
+        all_mu_windows = gw.getWindowsWithTitle(WINDOW_TITLE)
+        game_window = next((w for w in all_mu_windows if OUR_APP_TITLE_KEYWORD not in w.title), None)
+        if not game_window:
+            return (False, "Không tìm thấy cửa sổ game.")
 
-        # 2. Activate the window and wait for it to be ready
-        if not game_window.isActive:
-            game_window.activate()
-            time.sleep(0.5) # Wait half a second for the window to focus
+        game_window.activate()
+        time.sleep(0.5)
+        
+        window_pos = game_window.topleft
+        log.info(f"Tọa độ góc cửa sổ game hiện tại: {window_pos}")
 
-        # 3. Perform the login keystrokes
-        # Type account
+        account_click_pos = (window_pos[0] + relative_coords['account'][0], window_pos[1] + relative_coords['account'][1])
+        log.info(f"Click (low-level) vào ô Account tại tọa độ: {account_click_pos}")
+        low_level_click(account_click_pos[0], account_click_pos[1])
+        time.sleep(0.3)
+        log.info(f"Gõ (pynput) tài khoản: '{account}'")
         keyboard.type(account)
-        time.sleep(0.1)
 
-        # Press Tab to move to the password field
-        keyboard.press(Key.tab)
-        keyboard.release(Key.tab)
-        time.sleep(0.1)
-
-        # Type password
+        password_click_pos = (window_pos[0] + relative_coords['password'][0], window_pos[1] + relative_coords['password'][1])
+        log.info(f"Click (low-level) vào ô Password tại tọa độ: {password_click_pos}")
+        low_level_click(password_click_pos[0], password_click_pos[1])
+        time.sleep(0.3)
+        log.info("Gõ (pynput) mật khẩu.")
         keyboard.type(password)
-        time.sleep(0.1)
 
-        # Press Enter to log in
+        log.info("Nhấn (pynput) phím ENTER.")
         keyboard.press(Key.enter)
         keyboard.release(Key.enter)
-
-        return (True, f"Đã gửi thông tin đăng nhập cho tài khoản '{account}' thành công!")
-
+        
+        log.info("--- Quá trình đăng nhập tự động kết thúc ---")
+        return (True, "Đã gửi thông tin đăng nhập thành công!")
     except Exception as e:
-        error_message = f"Đã xảy ra lỗi không mong muốn:\n{e}"
-        return (False, error_message)
+        log.error(f"Lỗi khi thực hiện đăng nhập: {e}", exc_info=True)
+        return (False, f"Lỗi trong quá trình tự động hóa:\n{e}")
