@@ -1,25 +1,34 @@
 # file-path: src/core/config_manager.py
-# version: 1.0
-# last-updated: 2025-07-25
-# description: Handles all operations related to the settings.ini file,
-#              including reading and writing account credentials. This module
-#              is UI-independent.
+# version: 2.0 (Final)
+# last-updated: 2025-07-26
+# description: Correctly handles a persistent settings.ini path for both development and the packaged .exe.
 
 import configparser
 from pathlib import Path
+import sys
+import os
 
 class ConfigManager:
     """
     Manages reading and writing account configurations to an INI file.
+    Ensures the settings.ini file is always located next to the executable.
     """
     def __init__(self, config_file: str = "settings.ini"):
         """
-        Initializes the ConfigManager with the path to the config file.
-        The file is placed in the project's root directory.
+        Initializes the ConfigManager and determines the correct path for settings.ini.
         """
-        # Build the path to the root directory (up one level from src/)
-        self.config_path = Path(__file__).parent.parent.parent / config_file
+        if getattr(sys, 'frozen', False):
+            # If the application is run as a bundle (e.g., by PyInstaller)
+            application_path = os.path.dirname(sys.executable)
+        else:
+            # If run in a normal Python environment
+            application_path = Path(__file__).parent.parent.parent
+
+        self.config_path = Path(application_path) / config_file
         self.config = configparser.ConfigParser()
+        # Ensure the file exists on first run
+        if not self.config_path.is_file():
+            self._write_config()
 
     def _read_config(self):
         """Reads the configuration file into the parser."""
@@ -27,28 +36,21 @@ class ConfigManager:
 
     def _write_config(self):
         """Writes the current configuration to the file."""
-        with self.config_path.open('w') as configfile:
+        with self.config_path.open('w', encoding='utf-8') as configfile:
             self.config.write(configfile)
 
     def get_all_accounts(self) -> list[str]:
         """
         Retrieves a list of all account names (sections) from the config file.
-
-        Returns:
-            list[str]: A list of account names.
         """
         self._read_config()
-        return self.config.sections()
+        # Exclude the 'Coordinates' section from the account list
+        accounts = [s for s in self.config.sections() if s != 'Coordinates']
+        return accounts
 
     def get_password(self, account: str) -> str:
         """
         Retrieves the password for a specific account.
-
-        Args:
-            account (str): The name of the account (section).
-
-        Returns:
-            str: The password, or an empty string if not found.
         """
         self._read_config()
         return self.config.get(account, 'password', fallback='')
@@ -56,37 +58,24 @@ class ConfigManager:
     def save_account(self, account: str, password: str):
         """
         Saves or updates an account's password in the config file.
-
-        Args:
-            account (str): The account name to be used as the section header.
-            password (str): The password to save.
         """
         self._read_config()
         if not self.config.has_section(account):
             self.config.add_section(account)
         self.config.set(account, 'password', password)
         self._write_config()
-        
-    # hotfix - 2025-07-25 - Add delete_account method
+
     def delete_account(self, account: str) -> bool:
         """
         Deletes an account (section) from the config file.
-
-        Args:
-            account (str): The name of the account to delete.
-
-        Returns:
-            bool: True if the account was deleted, False if it didn't exist.
         """
         self._read_config()
-        if self.config.has_section(account):
+        if self.config.has_section(account) and account != 'Coordinates':
             self.config.remove_section(account)
             self._write_config()
             return True
         return False
-    
-      
-    # hotfix - 2025-07-25 - Add coordinate management.
+
     def save_coords(self, field_name, coords):
         """Saves coordinates for a specific field."""
         self._read_config()
@@ -108,6 +97,6 @@ class ConfigManager:
             if self.config.has_option('Coordinates', 'password'):
                 pw_coords = self.config.get('Coordinates', 'password').split(',')
                 coords['password'] = (int(pw_coords[0]), int(pw_coords[1]))
-            return coords
+            return coords if coords else None
         except:
             return None
