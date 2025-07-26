@@ -1,8 +1,6 @@
 # file-path: requirements.txt
-# version: 4.0 (Final)
-# last-updated: 2025-07-25
-# description: Final Hybrid Approach: pywin32 for clicking, pynput for typing.
+# version: 5.0
+# last-updated: 2025-07-26
+# description: Simplified requirements for the click-to-paste helper.
 
-pygetwindow==0.0.9
 pynput
-pywin32
